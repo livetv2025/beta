@@ -256,69 +256,7 @@
     }
 
     function searchChannels() {
-      const query = document.getElementById("search-box").value.toLowerCase();
-      const filteredChannels = channels.filter(channel => 
-        channel.name.toLowerCase().includes(query)
-      );
+      const searchText = document.getElementById("search-box").value.toLowerCase();
+      const filteredChannels = channels.filter(channel => channel.name.toLowerCase().includes(searchText));
       displayChannels(filteredChannels);
     }
-
-    function playChannel(url) {
-      const videoPlayer = document.getElementById("player");
-      const iframePlayer = document.getElementById("iframe-player");
-      const modal = document.getElementById("player-modal");
-      const loadingGif = document.getElementById("loading-gif");
-
-      loadingGif.style.display = "block";
-      modal.style.display = "flex";
-
-      if (url.endsWith(".m3u8") || url.includes(".m3u8")) {
-        iframePlayer.style.display = "none";
-        videoPlayer.style.display = "block";
-        
-        if (Hls.isSupported()) {
-          const hls = new Hls();
-          hls.on(Hls.Events.MANIFEST_PARSED, function () {
-            videoPlayer.src = "";
-            hls.loadSource(url);
-            hls.attachMedia(videoPlayer);
-
-            hls.on(Hls.Events.FRAG_LOADED, function () {
-              loadingGif.style.display = "none";
-            });
-          });
-
-          hls.on(Hls.Events.ERROR, function (event, data) {
-            console.error("HLS.js error:", data);
-            loadingGif.style.display = "none";
-          });
-        } else if (videoPlayer.canPlayType("application/vnd.apple.mpegurl")) {
-          videoPlayer.src = url;
-          videoPlayer.onload = () => {
-            loadingGif.style.display = "none";
-          };
-        } else {
-          alert("Your browser does not support HLS.");
-          loadingGif.style.display = "none";
-        }
-      } else if (url.endsWith(".m3u") || url.includes(".m3u")) {
-        iframePlayer.style.display = "block";
-        videoPlayer.style.display = "none";
-        iframePlayer.src = url;
-      }
-    }
-
-    function closePlayer() {
-      const videoPlayer = document.getElementById("player");
-      const iframePlayer = document.getElementById("iframe-player");
-      const modal = document.getElementById("player-modal");
-
-      videoPlayer.src = "";
-      iframePlayer.src = "";
-      modal.style.display = "none";
-    }
-
-    window.onload = loadPlaylist;
-  </script>
-</body>
-</html>
