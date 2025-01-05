@@ -40,19 +40,22 @@
       display: flex;
       gap: 15px;
       overflow-x: auto;
-      background-color: #fff;
+      background-color: #111;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       border-bottom: 1px solid #ddd;
     }
     .category {
       cursor: pointer;
       padding: 10px 15px;
-      background-color: #f1f1f1;
+      background-color: #2a2a2a;
       border-radius: 5px;
+      color: #fff;
+      text-transform: uppercase;
       transition: background-color 0.3s;
     }
     .category:hover {
-      background-color: #ddd;
+      background-color: #00ff99; /* Neon green hover effect */
+      box-shadow: 0 0 10px #00ff99;
     }
     .container {
       display: grid;
@@ -154,7 +157,10 @@
       <div id="loading-gif" class="loading-gif">
         <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Loading_icon.gif" alt="YouTube loading..." width="50">
       </div>
+      <!-- Video player for HLS or m3u8 links -->
       <video id="player" controls></video>
+      <!-- Iframe player for m3u type links -->
+      <iframe id="iframe-player" style="display: none; width: 100%; height: 100%;" allowfullscreen></iframe>
       <div class="player-controls">
         <button id="close-btn" onclick="closePlayer()">X</button>
       </div>
@@ -258,46 +264,57 @@
     }
 
     function playChannel(url) {
-      const player = document.getElementById("player");
+      const videoPlayer = document.getElementById("player");
+      const iframePlayer = document.getElementById("iframe-player");
       const modal = document.getElementById("player-modal");
       const loadingGif = document.getElementById("loading-gif");
 
       loadingGif.style.display = "block";
       modal.style.display = "flex";
 
-      if (Hls.isSupported()) {
-        const hls = new Hls();
+      if (url.endsWith(".m3u8") || url.includes(".m3u8")) {
+        iframePlayer.style.display = "none";
+        videoPlayer.style.display = "block";
+        
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.on(Hls.Events.MANIFEST_PARSED, function () {
+            videoPlayer.src = "";
+            hls.loadSource(url);
+            hls.attachMedia(videoPlayer);
 
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          player.src = "";
-          hls.loadSource(url);
-          hls.attachMedia(player);
+            hls.on(Hls.Events.FRAG_LOADED, function () {
+              loadingGif.style.display = "none";
+            });
+          });
 
-          hls.on(Hls.Events.FRAG_LOADED, function () {
+          hls.on(Hls.Events.ERROR, function (event, data) {
+            console.error("HLS.js error:", data);
             loadingGif.style.display = "none";
           });
-        });
-
-        hls.on(Hls.Events.ERROR, function (event, data) {
-          console.error("HLS.js error:", data);
+        } else if (videoPlayer.canPlayType("application/vnd.apple.mpegurl")) {
+          videoPlayer.src = url;
+          videoPlayer.onload = () => {
+            loadingGif.style.display = "none";
+          };
+        } else {
+          alert("Your browser does not support HLS.");
           loadingGif.style.display = "none";
-        });
-      } else if (player.canPlayType("application/vnd.apple.mpegurl")) {
-        player.src = url;
-        player.onload = () => {
-          loadingGif.style.display = "none";
-        };
-      } else {
-        alert("Your browser does not support HLS.");
-        loadingGif.style.display = "none";
+        }
+      } else if (url.endsWith(".m3u") || url.includes(".m3u")) {
+        iframePlayer.style.display = "block";
+        videoPlayer.style.display = "none";
+        iframePlayer.src = url;
       }
     }
 
     function closePlayer() {
-      const player = document.getElementById("player");
+      const videoPlayer = document.getElementById("player");
+      const iframePlayer = document.getElementById("iframe-player");
       const modal = document.getElementById("player-modal");
 
-      player.src = "";
+      videoPlayer.src = "";
+      iframePlayer.src = "";
       modal.style.display = "none";
     }
 
