@@ -4,41 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live TV Grid</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
+    /* Body Styles */
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #f0f0f0;
+      background: linear-gradient(45deg, #2c3e50, #34495e);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      animation: backgroundAnimation 30s ease-in-out infinite;
     }
+
+    /* Night Vibes Background Animation */
+    @keyframes backgroundAnimation {
+      0% {
+        background: linear-gradient(45deg, #2c3e50, #34495e);
+      }
+      50% {
+        background: linear-gradient(45deg, #1a252f, #2a3a47);
+      }
+      100% {
+        background: linear-gradient(45deg, #2c3e50, #34495e);
+      }
+    }
+
+    /* Container Grid Layout */
     .container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
+      gap: 20px;
       padding: 20px;
+      max-width: 1200px;
+      width: 100%;
     }
+
+    /* Card Styling */
     .card {
-      background-color: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      background-color: #1e2a33;
+      border: 2px solid #34495e;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       cursor: pointer;
       overflow: hidden;
       text-align: center;
-      transition: transform 0.2s ease;
+      transition: transform 0.2s ease-in-out, box-shadow 0.3s ease;
     }
+
     .card:hover {
       transform: scale(1.05);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
     }
+
     .card img {
       width: 100%;
       height: auto;
       display: block;
     }
+
     .card h3 {
       margin: 10px 0;
       font-size: 1rem;
+      color: #ecf0f1;
+      text-transform: capitalize;
+      letter-spacing: 1px;
     }
+
+    /* Modal for Video Player */
     #player-modal {
       display: none;
       position: fixed;
@@ -50,26 +89,42 @@
       z-index: 1000;
       justify-content: center;
       align-items: center;
+      flex-direction: column;
     }
+
     #loading-gif {
       display: none;
       margin-bottom: 20px;
     }
-    iframe {
-      width: 90%;
-      height: 90%;
-      border: none;
-    }
+
     #close-btn {
       position: absolute;
       top: 10px;
       right: 10px;
-      background-color: #fff;
+      background-color: #e74c3c;
+      color: white;
       border: none;
       border-radius: 50%;
       width: 40px;
       height: 40px;
+      font-size: 18px;
+      font-weight: bold;
       cursor: pointer;
+    }
+
+    iframe {
+      width: 80%;
+      height: 80%;
+      border: none;
+      border-radius: 10px;
+    }
+
+    /* Loading Message */
+    #loading {
+      font-size: 1.5rem;
+      color: #ecf0f1;
+      display: block;
+      text-align: center;
     }
   </style>
 </head>
@@ -77,14 +132,15 @@
   <div id="loading">Loading playlist...</div>
   <div class="container" id="channel-container"></div>
 
-  <div id="player-modal">
+  <!-- Video Player Modal -->
+  <div id="player-modal" onclick="closePlayer()">
+    <img id="loading-gif" src="loading.gif" alt="Loading..." width="50">
     <button id="close-btn" onclick="closePlayer()">X</button>
     <iframe id="player" src="" allowfullscreen></iframe>
   </div>
 
   <script>
     const playlistUrl = "https://raw.githubusercontent.com/MohammadKobirShah/KobirIPTV/refs/heads/main/1DistroTV.m3u";
-    const hlsPlayerUrl = "https://livetv2025.github.io/HLS-Player";
 
     async function loadPlaylist() {
       const container = document.getElementById("channel-container");
@@ -129,12 +185,16 @@
           const info = lines[i];
           const url = lines[i + 1]?.trim();
 
-          const nameMatch = info.match(/,(.*)$/);
+          // Look for the tvg-name in the #EXTINF line
+          const nameMatch = info.match(/tvg-name="([^"]+)"/);
           const logoMatch = info.match(/tvg-logo="(.*?)"/);
 
+          // Use tvg-name if available, else fallback to the last part after the comma
+          const name = nameMatch ? nameMatch[1] : (info.match(/,(.*)$/) ? info.match(/,(.*)$/)[1] : "Unknown Channel");
+          
           channels.push({
-            name: nameMatch ? nameMatch[1] : "Unknown Channel",
-            logo: logoMatch ? logoMatch[1] : "",
+            name: name,
+            logo: logoMatch ? logoMatch[1] : "",  // Use logo from tvg-logo if available
             url: url || ""
           });
         }
@@ -143,14 +203,42 @@
       return channels;
     }
 
-    function playChannel(channelUrl) {
+    function playChannel(url) {
       const player = document.getElementById("player");
       const modal = document.getElementById("player-modal");
+      const loadingGif = document.getElementById("loading-gif");
 
-      const hlsPlayerFullUrl = `${hlsPlayerUrl}?url=${encodeURIComponent(channelUrl)}`;
-      player.src = hlsPlayerFullUrl;
-
+      loadingGif.style.display = "block";
       modal.style.display = "flex";
+
+      // Check if HLS.js is supported
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+
+        // When HLS is loaded, set up the player
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          player.src = "";
+          hls.loadSource(url);
+          hls.attachMedia(player);
+          hls.on(Hls.Events.FRAG_LOADED, function () {
+            loadingGif.style.display = "none";
+          });
+        });
+
+        hls.on(Hls.Events.ERROR, function (event, data) {
+          console.error("HLS.js error:", data);
+          loadingGif.style.display = "none";
+        });
+      } else if (player.canPlayType("application/vnd.apple.mpegurl")) {
+        // For native HLS support (i.e., Safari and other Apple devices)
+        player.src = url;
+        player.onload = () => {
+          loadingGif.style.display = "none";
+        };
+      } else {
+        alert("Your browser does not support HLS.");
+        loadingGif.style.display = "none";
+      }
     }
 
     function closePlayer() {
