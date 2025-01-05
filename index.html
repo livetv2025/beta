@@ -73,6 +73,30 @@
       height: 40px;
       cursor: pointer;
     }
+    .player-container {
+      width: 80%;
+      height: 80%;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .player-controls {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 10;
+      color: white;
+      font-size: 16px;
+    }
+    .loading-gif {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
   </style>
 </head>
 <body>
@@ -80,9 +104,15 @@
   <div class="container" id="channel-container"></div>
 
   <div id="player-modal" onclick="closePlayer()">
-    <img id="loading-gif" src="loading.gif" alt="Loading..." width="50">
-    <button id="close-btn" onclick="closePlayer()">X</button>
-    <iframe id="player" src="" allowfullscreen></iframe>
+    <div class="player-container">
+      <div id="loading-gif" class="loading-gif">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Loading_icon.gif" alt="YouTube loading..." width="50">
+      </div>
+      <iframe id="player" src="" allowfullscreen></iframe>
+      <div class="player-controls">
+        <button id="close-btn" onclick="closePlayer()">X</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -131,7 +161,7 @@
           const info = lines[i];
           const url = lines[i + 1]?.trim();
 
-          const nameMatch = info.match(/,(.*)$/);
+          const nameMatch = info.match(tvg-name=",/,(.*)$/);
           const logoMatch = info.match(/tvg-logo="(.*?)"/);
 
           channels.push({
@@ -160,6 +190,7 @@
           player.src = "";
           hls.loadSource(url);
           hls.attachMedia(player);
+
           hls.on(Hls.Events.FRAG_LOADED, function () {
             loadingGif.style.display = "none";
           });
