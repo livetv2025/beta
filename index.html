@@ -12,6 +12,48 @@
       padding: 0;
       background-color: #f0f0f0;
     }
+    header {
+      background-color: #333;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    #search-box {
+      padding: 5px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+    .categories {
+      padding: 10px;
+      display: flex;
+      gap: 15px;
+      overflow-x: auto;
+      background-color: #fff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid #ddd;
+    }
+    .category {
+      cursor: pointer;
+      padding: 10px 15px;
+      background-color: #f1f1f1;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .category:hover {
+      background-color: #ddd;
+    }
     .container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -39,11 +81,6 @@
     .card h3 {
       margin: 10px 0;
       font-size: 1rem;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
     }
     #player-modal {
       display: none;
@@ -100,6 +137,15 @@
   </style>
 </head>
 <body>
+  <header>
+    <div class="header-content">
+      <h1>Live TV Grid</h1>
+      <input id="search-box" type="text" placeholder="Search channels..." oninput="searchChannels()">
+    </div>
+  </header>
+
+  <div class="categories" id="categories"></div>
+
   <div id="loading">Loading playlist...</div>
   <div class="container" id="channel-container"></div>
 
@@ -108,7 +154,7 @@
       <div id="loading-gif" class="loading-gif">
         <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Loading_icon.gif" alt="YouTube loading..." width="50">
       </div>
-      <iframe id="player" src="" allowfullscreen></iframe>
+      <video id="player" controls></video>
       <div class="player-controls">
         <button id="close-btn" onclick="closePlayer()">X</button>
       </div>
@@ -117,6 +163,7 @@
 
   <script>
     const playlistUrl = "https://raw.githubusercontent.com/MohammadKobirShah/KobirIPTV/refs/heads/main/1DistroTV.m3u";
+    let channels = [];
 
     async function loadPlaylist() {
       const container = document.getElementById("channel-container");
@@ -128,24 +175,9 @@
         const playlistText = await response.text();
 
         loadingMessage.style.display = "none";
-
-        const channels = parseM3U(playlistText);
-        channels.forEach(channel => {
-          const card = document.createElement("div");
-          card.className = "card";
-          card.onclick = () => playChannel(channel.url);
-
-          const img = document.createElement("img");
-          img.src = channel.logo || "https://via.placeholder.com/150";
-          img.alt = channel.name;
-
-          const title = document.createElement("h3");
-          title.textContent = channel.name;
-
-          card.appendChild(img);
-          card.appendChild(title);
-          container.appendChild(card);
-        });
+        channels = parseM3U(playlistText);
+        displayCategories(channels);
+        displayChannels(channels);
       } catch (error) {
         loadingMessage.textContent = "Failed to load playlist.";
         console.error("Error loading playlist:", error);
@@ -154,26 +186,75 @@
 
     function parseM3U(playlist) {
       const lines = playlist.split("\n");
-      const channels = [];
+      const parsedChannels = [];
 
       for (let i = 0; i < lines.length; i++) {
         if (lines[i].startsWith("#EXTINF")) {
           const info = lines[i];
           const url = lines[i + 1]?.trim();
-
-          // Corrected regex for extracting tvg-name and tvg-logo
+          const groupMatch = info.match(/group-title="(.*?)"/);
           const nameMatch = info.match(/tvg-name="(.*?)"/);
           const logoMatch = info.match(/tvg-logo="(.*?)"/);
 
-          channels.push({
+          parsedChannels.push({
             name: nameMatch ? nameMatch[1] : "Unknown Channel",
             logo: logoMatch ? logoMatch[1] : "",
-            url: url || ""
+            url: url || "",
+            group: groupMatch ? groupMatch[1] : "Other"
           });
         }
       }
 
-      return channels;
+      return parsedChannels;
+    }
+
+    function displayCategories(channels) {
+      const categories = [...new Set(channels.map(channel => channel.group))];
+      const categoriesContainer = document.getElementById("categories");
+      categoriesContainer.innerHTML = '';
+      
+      categories.forEach(category => {
+        const categoryButton = document.createElement("div");
+        categoryButton.className = "category";
+        categoryButton.textContent = category;
+        categoryButton.onclick = () => filterByCategory(category);
+        categoriesContainer.appendChild(categoryButton);
+      });
+    }
+
+    function displayChannels(channels) {
+      const container = document.getElementById("channel-container");
+      container.innerHTML = '';
+
+      channels.forEach(channel => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.onclick = () => playChannel(channel.url);
+
+        const img = document.createElement("img");
+        img.src = channel.logo || "https://via.placeholder.com/150";
+        img.alt = channel.name;
+
+        const title = document.createElement("h3");
+        title.textContent = channel.name;
+
+        card.appendChild(img);
+        card.appendChild(title);
+        container.appendChild(card);
+      });
+    }
+
+    function filterByCategory(category) {
+      const filteredChannels = channels.filter(channel => channel.group === category);
+      displayChannels(filteredChannels);
+    }
+
+    function searchChannels() {
+      const query = document.getElementById("search-box").value.toLowerCase();
+      const filteredChannels = channels.filter(channel => 
+        channel.name.toLowerCase().includes(query)
+      );
+      displayChannels(filteredChannels);
     }
 
     function playChannel(url) {
