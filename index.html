@@ -11,8 +11,8 @@
       font-family: 'Arial', sans-serif;
       margin: 0;
       padding: 0;
-      background: linear-gradient(45deg, #2c3e50, #34495e);
-      color: white;
+      background-color: #f0f0f0;
+      color: #333;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -20,20 +20,6 @@
       overflow: hidden;
       background-size: cover;
       background-position: center;
-      animation: backgroundAnimation 30s ease-in-out infinite;
-    }
-
-    /* Night Vibes Background Animation */
-    @keyframes backgroundAnimation {
-      0% {
-        background: linear-gradient(45deg, #2c3e50, #34495e);
-      }
-      50% {
-        background: linear-gradient(45deg, #1a252f, #2a3a47);
-      }
-      100% {
-        background: linear-gradient(45deg, #2c3e50, #34495e);
-      }
     }
 
     /* Container Grid Layout */
@@ -48,10 +34,10 @@
 
     /* Card Styling */
     .card {
-      background-color: #1e2a33;
-      border: 2px solid #34495e;
+      background-color: #fff;
+      border: 2px solid #ddd;
       border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       cursor: pointer;
       overflow: hidden;
       text-align: center;
@@ -60,7 +46,7 @@
 
     .card:hover {
       transform: scale(1.05);
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
     }
 
     .card img {
@@ -72,7 +58,7 @@
     .card h3 {
       margin: 10px 0;
       font-size: 1rem;
-      color: #ecf0f1;
+      color: #333;
       text-transform: capitalize;
       letter-spacing: 1px;
     }
@@ -122,7 +108,7 @@
     /* Loading Message */
     #loading {
       font-size: 1.5rem;
-      color: #ecf0f1;
+      color: #333;
       display: block;
       text-align: center;
     }
@@ -134,7 +120,7 @@
 
   <!-- Video Player Modal -->
   <div id="player-modal" onclick="closePlayer()">
-    <img id="loading-gif" src="loading.gif" alt="Loading..." width="50">
+    <img id="loading-gif" src="https://c.tenor.com/Xh9lfgVUms8AAAAd/tenor.gif" alt="Loading..." width="50">
     <button id="close-btn" onclick="closePlayer()">X</button>
     <iframe id="player" src="" allowfullscreen></iframe>
   </div>
@@ -238,19 +224,4 @@
       } else {
         alert("Your browser does not support HLS.");
         loadingGif.style.display = "none";
-      }
-    }
-
-    function closePlayer() {
-      const player = document.getElementById("player");
-      const modal = document.getElementById("player-modal");
-
-      player.src = "";
-      modal.style.display = "none";
-    }
-
-    // Load the playlist when the page loads
-    window.onload = loadPlaylist;
-  </script>
-</body>
-</html>
+     
